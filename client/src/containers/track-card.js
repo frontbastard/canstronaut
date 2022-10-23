@@ -1,18 +1,40 @@
 import React from 'react';
 import styled from '@emotion/styled';
-import { colors, mq } from '../styles';
+import { colors, mq, IconView } from '../styles';
 import { humanReadableTimeFromSeconds } from '../utils/helpers';
 import { Link } from '@reach/router';
+import { gql, useMutation } from '@apollo/client';
+
+const INCREMENT_TRACK_VIEWS = gql`
+  mutation incrementTrackViewsMutation($incrementTrackViewsId: ID!) {
+    incrementTrackViews(id: $incrementTrackViewsId) {
+      code
+      success
+      message
+      track {
+        id
+        numberOfViews
+      }
+    }
+  }
+`;
 
 /**
  * Track Card component renders basic info in a card format
  * for each track populating the tracks grid homepage.
  */
 const TrackCard = ({ track }) => {
-  const { title, thumbnail, author, length, modulesCount, id } = track;
+  const { title, thumbnail, author, length, modulesCount, id, numberOfViews } =
+    track;
+  const [incrementTrackViews] = useMutation(INCREMENT_TRACK_VIEWS, {
+    variables: { incrementTrackViewsId: id },
+    onCompleted: (data) => {
+      console.log(data);
+    },
+  });
 
   return (
-    <CardContainer to={`/track/${id}`}>
+    <CardContainer to={`/track/${id}`} onClick={incrementTrackViews}>
       <CardContent>
         <CardImageContainer>
           <CardImage src={thumbnail} alt={title} />
@@ -20,13 +42,20 @@ const TrackCard = ({ track }) => {
         <CardBody>
           <CardTitle>{title || ''}</CardTitle>
           <CardFooter>
-            <AuthorImage src={author.photo} />
-            <AuthorAndTrack>
-              <AuthorName>{author.name}</AuthorName>
-              <TrackLength>
-                {modulesCount} modules - {humanReadableTimeFromSeconds(length)}
-              </TrackLength>
-            </AuthorAndTrack>
+            <div>
+              <AuthorImage src={author.photo} />
+              <AuthorAndTrack>
+                <AuthorName>{author.name}</AuthorName>
+                <TrackLength>
+                  {modulesCount} modules -{' '}
+                  {humanReadableTimeFromSeconds(length)}
+                </TrackLength>
+              </AuthorAndTrack>
+            </div>
+            <IconAndLabel>
+              <IconView width="16px" />
+              <div id="viewCount">{numberOfViews} view(s)</div>
+            </IconAndLabel>
           </CardFooter>
         </CardBody>
       </CardContent>
@@ -35,6 +64,22 @@ const TrackCard = ({ track }) => {
 };
 
 export default TrackCard;
+
+const IconAndLabel = styled.div({
+  display: 'flex',
+  flex: 'row',
+  alignItems: 'center',
+  maxHeight: 20,
+  div: {
+    marginLeft: 8,
+  },
+  svg: {
+    maxHeight: 16,
+  },
+  '#viewCount': {
+    color: colors.pink.base,
+  },
+});
 
 /** Track Card styled components */
 const CardContainer = styled(Link)({
@@ -116,6 +161,7 @@ const CardBody = styled.div({
 const CardFooter = styled.div({
   display: 'flex',
   flexDirection: 'Row',
+  justifyContent: 'space-between',
 });
 
 const AuthorImage = styled.img({

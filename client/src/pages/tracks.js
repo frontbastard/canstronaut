@@ -12,6 +12,7 @@ const TRACKS = gql`
       thumbnail
       length
       modulesCount
+      numberOfViews
       author {
         name
         photo
